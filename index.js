@@ -226,26 +226,13 @@ app.post("/reservar", async (req, res) => {
         const horaStr = sesionHora[0].hora.toString().substring(0, 5);
         const fechaHoraClase = new Date(`${fecha_clase}T${horaStr}:00`);
         const unaHoraAntes = new Date(Date.now() + 60 * 60 * 1000);
-        if (fechaHoraClase < unaHoraAntes) {
-            return res.status(400).json({
-                error: "No puedes reservar una clase que empieza en menos de 1 hora."
-            });
-        }
+      if (fechaHoraClase < unaHoraAntes) {
+    return res.status(400).json({
+        error: "No puedes reservar una clase que empieza en menos de 1 hora."
+    });
+}
 
-        // Verificar que la clase no empieza en menos de 1 hora
-        const [sesionHora] = await db.query(
-            "SELECT hora FROM sesiones WHERE id = ?", [sesion_id]
-        );
-        const horaStr = sesionHora[0].hora.toString().substring(0, 5);
-        const fechaHoraClase = new Date(`${fecha_clase}T${horaStr}:00`);
-        const unaHoraAntes = new Date(Date.now() + 60 * 60 * 1000);
-        if (fechaHoraClase < unaHoraAntes) {
-            return res.status(400).json({
-                error: "No puedes reservar una clase que empieza en menos de 1 hora."
-            });
-        }
-
-        // ¿Ya tiene reserva ese día?
+// ¿Ya tiene reserva ese día?
         const [duplicada] = await db.query(
             `SELECT id FROM reservas 
              WHERE cliente_id = ? AND fecha_clase = ? AND estado = 'confirmada'`,
