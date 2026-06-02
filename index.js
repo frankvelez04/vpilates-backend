@@ -4,6 +4,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -12,7 +13,9 @@ app.use(express.static('public'));
 
 const SECRET = process.env.JWT_SECRET;
 
-
+// ===============================
+// CONEXIÓN BD
+// ===============================
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -20,7 +23,9 @@ const db = mysql.createPool({
     database: process.env.DB_NAME
 });
 
-
+// ===============================
+// LOGIN
+// ===============================
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
@@ -59,12 +64,14 @@ app.post("/login", async (req, res) => {
     }
 });
 
-
+// ===============================
+// REGISTRO
+// ===============================
 app.post("/registro", async (req, res) => {
     const { nombre, apellidos, telefono, email, password } = req.body;
 
     try {
-       
+        // Validar que el email sea de un dominio permitido
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({ error: "El formato del email no es válido" });
@@ -88,7 +95,13 @@ app.post("/registro", async (req, res) => {
             });
         }
 
-        
+        // Validar teléfono de 9 dígitos
+        const telefonoRegex = /^\d{9}$/;
+        if (!telefonoRegex.test(telefono)) {
+            return res.status(400).json({ error: "El teléfono debe tener exactamente 9 dígitos." });
+        }
+
+        // Comprobar email duplicado
         const [existeEmail] = await db.query(
             "SELECT id FROM clientes WHERE email = ?",
             [email]
@@ -97,7 +110,7 @@ app.post("/registro", async (req, res) => {
             return res.status(400).json({ error: "Este email ya está registrado" });
         }
 
-        
+        // Comprobar teléfono duplicado
         const [existeTelefono] = await db.query(
             "SELECT id FROM clientes WHERE telefono = ?",
             [telefono]
@@ -105,12 +118,6 @@ app.post("/registro", async (req, res) => {
         if (existeTelefono.length > 0) {
             return res.status(400).json({ error: "Este número de teléfono ya está registrado" });
         }
-
-        
-const telefonoRegex = /^\d{9}$/;
-if (!telefonoRegex.test(telefono)) {
-    return res.status(400).json({ error: "El teléfono debe tener exactamente 9 dígitos." });
-}
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -127,7 +134,9 @@ if (!telefonoRegex.test(telefono)) {
     }
 });
 
-
+// ===============================
+// HORARIOS
+// ===============================
 app.get("/horarios", async (req, res) => {
     const { tipo_clase_id, fecha } = req.query;
 
@@ -178,7 +187,9 @@ app.get("/horarios", async (req, res) => {
     }
 });
 
-
+// ===============================
+// RESERVAR
+// ===============================
 app.post("/reservar", async (req, res) => {
     const { sesion_id, fecha_clase } = req.body;
     const token = req.headers.authorization?.split(" ")[1];
@@ -207,7 +218,33 @@ app.post("/reservar", async (req, res) => {
             });
         }
 
-        
+        // Verificar que la clase no empieza en menos de 1 hora
+        const [sesionHora] = await db.query(
+            "SELECT hora FROM sesiones WHERE id = ?", [sesion_id]
+        );
+        const horaStr = sesionHora[0].hora.toString().substring(0, 5);
+        const fechaHoraClase = new Date(`${fecha_clase}T${horaStr}:00`);
+        const unaHoraAntes = new Date(Date.now() + 60 * 60 * 1000);
+        if (fechaHoraClase < unaHoraAntes) {
+            return res.status(400).json({
+                error: "No puedes reservar una clase que empieza en menos de 1 hora."
+            });
+        }
+
+        // Verificar que la clase no empieza en menos de 1 hora
+        const [sesionHora] = await db.query(
+            "SELECT hora FROM sesiones WHERE id = ?", [sesion_id]
+        );
+        const horaStr = sesionHora[0].hora.toString().substring(0, 5);
+        const fechaHoraClase = new Date(`${fecha_clase}T${horaStr}:00`);
+        const unaHoraAntes = new Date(Date.now() + 60 * 60 * 1000);
+        if (fechaHoraClase < unaHoraAntes) {
+            return res.status(400).json({
+                error: "No puedes reservar una clase que empieza en menos de 1 hora."
+            });
+        }
+
+        // ¿Ya tiene reserva ese día?
         const [duplicada] = await db.query(
             `SELECT id FROM reservas 
              WHERE cliente_id = ? AND fecha_clase = ? AND estado = 'confirmada'`,
@@ -220,7 +257,7 @@ app.post("/reservar", async (req, res) => {
             });
         }
 
-        
+        // Verificar aforo
         const [sesion] = await db.query(
             "SELECT capacidad_max FROM sesiones WHERE id = ?",
             [sesion_id]
@@ -248,6 +285,9 @@ app.post("/reservar", async (req, res) => {
     }
 });
 
+// ===============================
+// OBTENER RESERVAS
+// ===============================
 app.get("/reservas", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
 
@@ -279,6 +319,9 @@ app.get("/reservas", async (req, res) => {
     }
 });
 
+// ===============================
+// CANCELAR RESERVA
+// ===============================
 app.delete("/cancelar-reserva", async (req, res) => {
     const { reserva_id } = req.body;
     const token = req.headers.authorization?.split(" ")[1];
@@ -328,6 +371,9 @@ app.delete("/cancelar-reserva", async (req, res) => {
     }
 });
 
+// ===============================
+// INICIAR SERVIDOR
+// ===============================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
     console.log(`Servidor funcionando en http://localhost:${PORT}`)

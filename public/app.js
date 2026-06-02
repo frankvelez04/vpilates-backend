@@ -89,7 +89,6 @@ formRegistro.addEventListener("submit", async (e) => {
     const password = document.getElementById("reg-password").value.trim();
     const passwordConfirm = document.getElementById("reg-password-confirm").value.trim();
 
-    // Validar que las contraseñas coincidan
     if (password !== passwordConfirm) {
         showToast("Las contraseñas no coinciden", "error");
         return;
@@ -190,7 +189,28 @@ btnCargarHorarios.addEventListener("click", async () => {
             return;
         }
 
-        data.forEach(h => {
+        // Filtrar clases pasadas o con menos de 1 hora si es hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        const ahora = new Date();
+
+        const horariosFiltrados = data.filter(h => {
+            if (fecha === hoy) {
+                const horaStr = h.hora.substring(0, 5);
+                const [horas, minutos] = horaStr.split(':');
+                const horaClase = new Date();
+                horaClase.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+                const unaHoraAntes = new Date(ahora.getTime() + 60 * 60 * 1000);
+                return horaClase > unaHoraAntes;
+            }
+            return true;
+        });
+
+        if (horariosFiltrados.length === 0) {
+            listaHorarios.innerHTML = `<p class="vp-list-item-sub">No hay más clases disponibles para hoy.</p>`;
+            return;
+        }
+
+        horariosFiltrados.forEach(h => {
             const profesor = obtenerProfesor(tipoClaseId, fecha, h.hora, h.modalidad);
 
             const item = document.createElement("div");
@@ -199,7 +219,7 @@ btnCargarHorarios.addEventListener("click", async () => {
             item.innerHTML = `
                 <div class="vp-list-item-header">
                     <div>
-                        <div class="vp-list-item-title">${h.hora}</div>
+                        <div class="vp-list-item-title">${h.hora.substring(0, 5)}</div>
                         <div class="vp-list-item-sub">
                             ${profesor ? `Grupo de ${profesor}` : ""}
                             ${h.modalidad !== "ninguna" ? ` · ${h.modalidad}` : ""}
@@ -303,8 +323,8 @@ btnCargarReservas.addEventListener("click", async () => {
             const item = document.createElement("div");
             item.className = "vp-list-item";
 
-           const fechaMostrar = r.fecha_clase
-    ? new Date(r.fecha_clase).toLocaleDateString("es-ES", {
+            const fechaMostrar = r.fecha_clase
+                ? new Date(r.fecha_clase).toLocaleDateString("es-ES", {
                     weekday: "long", day: "numeric", month: "long"
                   })
                 : "";
@@ -313,7 +333,7 @@ btnCargarReservas.addEventListener("click", async () => {
                 <div class="vp-list-item-header">
                     <div>
                         <div class="vp-list-item-title">${r.tipo_clase}</div>
-                        <div class="vp-list-item-sub">${fechaMostrar} · ${r.hora}</div>
+                        <div class="vp-list-item-sub">${fechaMostrar} · ${r.hora.substring(0, 5)}</div>
                     </div>
                 </div>
                 <div class="vp-list-item-actions">
