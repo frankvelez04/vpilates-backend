@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Reservar clases de Pilates | VPilates</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+    <header class="vp-header">
+        <div class="vp-header-inner">
+            <h1 class="vp-title">Reserva tus clases en Leganés</h1>
+            <p class="vp-subtitle">Sistema de citas para VPilates & Hipopresivos</p>
+        </div>
+    </header>
+
+    <main class="vp-main">
+        
+        <section class="vp-card vp-auth">
+            <div class="vp-tabs">
+                <button class="vp-tab-button vp-tab-active" data-tab="login">Iniciar sesión</button>
+                <button class="vp-tab-button" data-tab="registro">Crear cuenta</button>
+            </div>
+
+            
+            <div class="vp-tab-content vp-tab-content-active" id="tab-login">
+                <form id="form-login" class="vp-form">
+                    <div class="vp-form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required />
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" required />
+                    </div>
+                    <button type="submit" class="vp-btn-primary">Entrar</button>
+                </form>
+            </div>
+
+            
+            <div class="vp-tab-content" id="tab-registro">
+                <form id="form-registro" class="vp-form">
+                    <div class="vp-form-group">
+                        <label for="reg-nombre">Nombre</label>
+                        <input type="text" id="reg-nombre" required />
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="reg-apellidos">Apellidos</label>
+                        <input type="text" id="reg-apellidos" required />
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="reg-telefono">Teléfono</label>
+                        <input type="tel" id="reg-telefono" required maxlength="9" pattern="\d{9}" title="El teléfono debe tener 9 dígitos" />
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" required />
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="reg-password">Contraseña</label>
+                        <input type="password" id="reg-password" required />
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="reg-password-confirm">Repetir contraseña</label>
+                        <input type="password" id="reg-password-confirm" required />
+                    </div>
+                    <button type="submit" class="vp-btn-primary">Crear cuenta</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="vp-card vp-hidden" id="zona-usuario">
+            <div class="vp-user-header">
+                <div>
+                    <h2 class="vp-section-title">Hola, <span id="usuario-nombre"></span></h2>
+                    <p class="vp-section-subtitle">Gestiona tus clases y reservas</p>
+                </div>
+                <button id="btn-logout" class="vp-btn-secondary">Cerrar sesión</button>
+            </div>
+
+            <div class="vp-grid">
+                
+                <div class="vp-column">
+                    <h3 class="vp-column-title">Horarios disponibles</h3>
+
+                    <div class="vp-form-group">
+                        <label for="select-servicio">Tipo de clase</label>
+                        <select id="select-servicio">
+                            <option value="1">Pilates con hipopresivos</option>
+                            <option value="2">Yoga</option>
+                            <option value="3">Barre</option>
+                        </select>
+                    </div>
+
+                    <div class="vp-form-group">
+                        <label for="select-fecha">Fecha</label>
+                        <input type="date" id="select-fecha" />
+                    </div>
+
+                    <button id="btn-cargar-horarios" class="vp-btn-primary vp-btn-full">Ver horarios</button>
+
+                    <div id="lista-horarios" class="vp-list"></div>
+                </div>
+
+            
+                <div class="vp-column">
+                    <h3 class="vp-column-title">Mis reservas</h3>
+                    <button id="btn-cargar-reservas" class="vp-btn-outline vp-btn-full">Actualizar reservas</button>
+                    <div id="lista-reservas" class="vp-list"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="vp-toast" class="vp-toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
