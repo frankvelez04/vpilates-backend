@@ -203,11 +203,12 @@ app.post("/reservar", async (req, res) => {
         const decoded = jwt.verify(token, SECRET);
         const cliente_id = decoded.id;
 
-        // ¿Está bloqueado por demasiadas cancelaciones esta semana?
+        // ¿Está bloqueado por demasiadas cancelaciones esta semana? (solo las del cliente, no las del admin)
         const [cancelaciones] = await db.query(
             `SELECT COUNT(*) AS total FROM reservas 
              WHERE cliente_id = ? 
                AND estado = 'cancelada'
+               AND cancelado_por = 'cliente'
                AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
             [cliente_id]
         );
@@ -215,6 +216,19 @@ app.post("/reservar", async (req, res) => {
         if (cancelaciones[0].total >= 3) {
             return res.status(403).json({
                 error: "Tu cuenta está bloqueada temporalmente por demasiadas cancelaciones esta semana. Contacta con el estudio."
+            });
+        }
+
+        // Verificar que la clase no empieza en menos de 1 hora
+        const [sesionHora] = await db.query(
+            "SELECT hora FROM sesiones WHERE id = ?", [sesion_id]
+        );
+        const horaStr = sesionHora[0].hora.toString().substring(0, 5);
+        const fechaHoraClase = new Date(`${fecha_clase}T${horaStr}:00`);
+        const unaHoraAntes = new Date(Date.now() + 60 * 60 * 1000);
+        if (fechaHoraClase < unaHoraAntes) {
+            return res.status(400).json({
+                error: "No puedes reservar una clase que empieza en menos de 1 hora."
             });
         }
 
@@ -331,15 +345,16 @@ app.delete("/cancelar-reserva", async (req, res) => {
 
         // Cancelar siempre — la plaza se libera sí o sí
         await db.query(
-            "UPDATE reservas SET estado = 'cancelada' WHERE id = ?",
+            "UPDATE reservas SET estado = 'cancelada', cancelado_por = 'cliente' WHERE id = ?",
             [reserva_id]
         );
 
-        // Contar cancelaciones de los últimos 7 días
+        // Contar cancelaciones del cliente de los últimos 7 días (solo las suyas, no las del admin)
         const [cancelaciones] = await db.query(
             `SELECT COUNT(*) AS total FROM reservas 
              WHERE cliente_id = ? 
                AND estado = 'cancelada'
+               AND cancelado_por = 'cliente'
                AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
             [cliente_id]
         );
